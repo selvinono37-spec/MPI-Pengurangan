@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MPI - Pengurangan sampai 20 (Kelas 1 MI)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- html2pdf for Report -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Tailwind Config for Custom Colors/Fonts -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                        arabic: ['Amiri', 'serif'],
+                    },
+                    colors: {
+                        kemenag: {
+                            green: '#0F5132',
+                            gold: '#D4AF37',
+                            light: '#E8F5E9'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'slide-up': 'slideUp 0.5s ease-out forwards',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles & Utilities */
+        body {
+            background-color: #f0fdf4; /* Light green background */
+            background-image: radial-gradient(#dcfce7 2px, transparent 2px);
+            background-size: 30px 30px;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .hide { display: none !important; }
+        
+        /* Modal Backdrop styling for floating slides */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        /* Glassmorphism cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #059669; }
+
+        .arabic-text {
+            font-size: 1.75rem;
+            line-height: 2.5rem;
+            text-align: right;
+            direction: rtl;
+        }
+
+        /* Tap-to-Match / Select classes */
+        .selectable { cursor: pointer; transition: all 0.2s; }
+        .selectable:active { transform: scale(0.95); }
+        .selected { border-color: #10b981 !important; background-color: #d1fae5 !important; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3) !important; }
+        .disabled { opacity: 0.5; pointer-events: none; }
+        
+        .menu-locked { filter: grayscale(100%); opacity: 0.7; cursor: not-allowed; }
+        
+        /* Print Styles for Report */
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .glass-card { box-shadow: none; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col items-center justify-center">
+
+    <!-- ==================== UI COMPONENTS: MODALS ==================== -->
+    
+    <!-- Generic Alert Modal (Replaces window.alert) -->
+    <div id="alert-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hide opacity-0 transition-opacity duration-300">
+        <div class="glass-card rounded-3xl p-6 md:p-8 max-w-sm w-[90%] text-center transform scale-95 transition-transform duration-300 mx-auto" id="alert-box">
+            <div id="alert-icon" class="text-5xl mb-4">🔔</div>
+            <h3 id="alert-title" class="text-xl font-bold text-gray-800 mb-2">Perhatian</h3>
+            <p id="alert-message" class="text-gray-600 mb-6 font-medium"></p>
+            <button onclick="closeAlert()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-full w-full shadow-lg transition-transform active:scale-95">Mengerti</button>
+        </div>
+    </div>
+
+    <!-- Developer Info Modal -->
+    <div id="dev-modal" class="fixed inset-0 z-40 flex items-center justify-center modal-backdrop hide opacity-0 transition-opacity duration-300">
+        <div class="glass-card rounded-3xl p-8 max-w-md w-[90%] text-center relative mx-auto">
+            <button onclick="closeModal('dev-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center">×</button>
+            <div class="w-32 h-32 mx-auto mb-4 relative flex items-center justify-center rounded-full border-4 border-kemenag-gold shadow-lg bg-kemenag-green text-white text-5xl font-black overflow-hidden">
+                <img src="https://iili.io/nvZH34S.md.jpg" alt="Foto Pengembang" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/150x150/0F5132/D4AF37?text=SN'">
+            </div>
+            <h2 class="text-2xl font-extrabold text-kemenag-green mb-1">Selvi Nono, S.Pd.I</h2>
+            <p class="text-lg font-bold text-kemenag-gold mb-2">Guru Kelas 1</p>
+            <div class="bg-kemenag-light rounded-xl p-4 mb-6 shadow-inner text-left">
+                <p class="flex items-center text-gray-700 mb-2 font-semibold"><span class="mr-2 text-xl">🏫</span> MIN 1 Kota Gorontalo</p>
+                <p class="flex items-center text-gray-700 font-semibold"><span class="mr-2 text-xl">📧</span> selvinono37@gmail.com</p>
+            </div>
+            <button onclick="closeModal('dev-modal')" class="bg-kemenag-green hover:bg-green-800 text-white font-bold py-3 px-8 rounded-full shadow-lg w-full transition-transform active:scale-95">Kembali ke Cover</button>
+        </div>
+    </div>
+
+    <!-- Learning Goals Modal -->
+    <div id="goal-modal" class="fixed inset-0 z-40 flex items-center justify-center modal-backdrop hide opacity-0 transition-opacity duration-300 p-4">
+        <div class="glass-card rounded-3xl p-6 md:p-8 max-w-2xl w-full text-center relative max-h-[90vh] overflow-y-auto mx-auto">
+            <button onclick="closeModal('goal-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center">×</button>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-indigo-600 mb-6 flex items-center justify-center gap-2">
+                <span>🎯</span> Tujuan Pembelajaran
+            </h2>
+            
+            <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-xl mb-6 text-left shadow-sm">
+                <p class="text-lg text-gray-800 font-semibold leading-relaxed">
+                    Murid mampu melakukan <span class="text-indigo-600 font-bold">pengurangan bilangan cacah sampai 20</span> dengan tepat agar dapat menumbuhkan sikap teliti, tekun, dan percaya diri dalam menyelesaikan masalah sebagai wujud <span class="text-pink-500 font-bold">Cinta Ilmu</span>.
+                </p>
+            </div>
+
+            <div class="bg-pink-50 rounded-xl p-5 mb-6 text-left shadow-sm border border-pink-200">
+                <div class="w-full h-32 bg-gradient-to-r from-pink-400 to-rose-400 rounded-xl mb-4 shadow-sm border-2 border-pink-300 flex items-center justify-center text-6xl animate-bounce-slow relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
+                    <span class="z-10 drop-shadow-md">🌟👦👧📚</span>
+                </div>
+                <h4 class="font-bold text-pink-600 mb-3 flex items-center gap-2"><span>💖</span> Nilai Karakter (KBC)</h4>
+                <p class="text-sm text-gray-700 font-semibold bg-pink-100 p-3 rounded-lg leading-relaxed">
+                    Belajar berhitung adalah cara kita bersyukur atas nikmat dan karunia Allah. Dengan teliti dan sabar, kita menjadi anak yang berakhlak mulia dan penuh kasih sayang.
+                </p>
+            </div>
+
+            <button onclick="closeModal('goal-modal')" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-full shadow-lg w-full transition-transform active:scale-95">Kembali ke Cover</button>
+        </div>
+    </div>
+
+
+    <!-- ==================== MAIN APPLICATION CONTAINERS ==================== -->
+    <div id="app-container" class="w-full max-w-4xl mx-auto min-h-[100dvh] md:min-h-[85vh] bg-white md:rounded-3xl md:shadow-2xl overflow-hidden relative flex flex-col md:my-8 border-4 border-blue-200">
+        
+        <!-- 1. SPLASH SCREEN -->
+        <section id="splash-screen" class="absolute inset-0 z-30 bg-blue-600 flex flex-col items-center justify-center text-white transition-opacity duration-500">
+            <div class="animate-bounce-slow mb-4">
+                <svg class="w-24 h-24 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            </div>
+            <h1 class="text-3xl font-black mb-2 animate-pulse-fast text-center px-4 drop-shadow-md text-white">Pengurangan <br>sampai 20</h1>
+            <p class="text-blue-200 font-semibold tracking-widest text-sm">MEMUAT...</p>
+        </section>
+
+        <!-- 2. COVER SCREEN (Ocean Theme) -->
+        <section id="cover-screen" class="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-cyan-100 via-blue-50 to-blue-200 relative hide overflow-hidden">
+            <!-- Decorative Elements (Ocean Theme) -->
+            <div class="absolute top-0 left-0 w-48 h-48 bg-blue-300 rounded-br-full opacity-30 -z-10 animate-pulse"></div>
+            <div class="absolute bottom-0 right-0 w-64 h-64 bg-cyan-300 rounded-tl-full opacity-30 -z-10 animate-float"></div>
+            <div class="absolute top-20 right-10 w-10 h-10 bg-white rounded-full opacity-40 -z-10 animate-bounce-slow"></div>
+            <div class="absolute bottom-40 left-10 w-6 h-6 bg-white rounded-full opacity-50 -z-10 animate-float"></div>
+
+            <!-- School Logo Container -->
+            <div class="mb-3 relative z-10">
+                <img src="https://iili.io/nvQRAwx.md.jpg" alt="Logo Sekolah MIN 1 Kota Gorontalo" class="w-16 h-16 md:w-20 md:h-20 object-contain rounded-2xl shadow-md border-2 border-white bg-white p-1" onerror="this.src='https://placehold.co/100x100/0F5132/D4AF37?text=MIN+1'">
+            </div>
+
+            <!-- Running Text Marquee Info -->
+            <div class="w-full max-w-md bg-blue-900/10 backdrop-blur-sm border border-blue-300 rounded-full overflow-hidden py-1.5 px-4 mb-4 flex items-center shadow-sm relative z-10">
+                <span class="text-xs mr-2 font-bold text-blue-700 bg-blue-200 px-2 py-0.5 rounded-full shrink-0">INFO</span>
+                <div class="overflow-hidden whitespace-nowrap flex-1">
+                    <div class="inline-block animate-[marquee_20s_linear_infinite] text-xs font-bold text-blue-900">
+                        ✨ Matematika Kelas 1 MI | Pengurangan sampai 20 | Pengembang: Selvi Nono, S.Pd.I (MIN 1 Kota Gorontalo) | Tujuan: Murid mampu melakukan pengurangan bilangan cacah sampai 20 dengan tepat & teliti sebagai wujud Cinta Ilmu! 🌊🐬
+                    </div>
+                </div>
+            </div>
+
+            <div class="inline-block bg-blue-100 text-blue-800 font-bold px-4 py-1 rounded-full mb-3 text-sm uppercase tracking-wide border border-blue-300 shadow-sm relative z-10">
+                📚 Kelas 1 MI | Matematika
+            </div>
+            
+            <h1 class="text-4xl md:text-5xl font-black text-center text-gray-800 mb-6 drop-shadow-sm leading-tight relative z-10">
+                Mari Belajar<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Pengurangan</span> 
+                <span class="text-orange-500">sampai 20</span>
+            </h1>
+
+            <!-- Hero Illustration (SVG) -->
+            <div class="w-64 h-64 mb-8 relative animate-float z-10">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="90" fill="#93c5fd" opacity="0.4"/>
+                    <path d="M 10 120 Q 50 90 100 120 T 190 120" fill="none" stroke="#3b82f6" stroke-width="8" opacity="0.5"/>
+                    <path d="M 10 150 Q 50 120 100 150 T 190 150" fill="none" stroke="#0ea5e9" stroke-width="8" opacity="0.5"/>
+                    
+                    <rect x="50" y="60" width="40" height="60" rx="10" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+                    <text x="70" y="100" font-size="28" font-family="Nunito" font-weight="bold" fill="#854d0e" text-anchor="middle">15</text>
+                    <text x="100" y="100" font-size="40" font-family="Nunito" font-weight="bold" fill="#ef4444" text-anchor="middle">-</text>
+                    <rect x="110" y="60" width="40" height="60" rx="10" fill="#6ee7b7" stroke="#059669" stroke-width="2"/>
+                    <text x="130" y="100" font-size="28" font-family="Nunito" font-weight="bold" fill="#064e3b" text-anchor="middle">5</text>
+                    
+                    <path d="M40 150 Q100 170 160 150" fill="none" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 5"/>
+                    <path d="M 30 50 L 40 40 L 50 50 L 40 60 Z" fill="#fb923c"/>
+                    <circle cx="160" cy="50" r="10" fill="#38bdf8"/>
+                </svg>
+            </div>
+
+            <div class="flex flex-col w-full max-w-xs gap-3 relative z-10">
+                <button onclick="openModal('dev-modal')" class="bg-white border-2 border-blue-500 text-blue-700 font-bold py-3 px-6 rounded-2xl hover:bg-blue-50 transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <span>👩‍🏫</span> Profil Pengembang
+                </button>
+                <button onclick="openModal('goal-modal')" class="bg-white border-2 border-cyan-500 text-cyan-700 font-bold py-3 px-6 rounded-2xl hover:bg-cyan-50 transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <span>🎯</span> Tujuan Pembelajaran
+                </button>
+                <button onclick="navigate('form-screen')" class="bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white font-black py-4 px-6 rounded-2xl shadow-xl transform transition-transform hover:scale-105 active:scale-95 text-lg mt-2 flex items-center justify-center gap-2">
+                    MULAI BELAJAR <span>🚀</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 3. FORM INPUT IDENTITAS -->
+        <section id="form-screen" class="flex-1 flex flex-col items-center justify-center p-6 bg-blue-50 relative hide">
+            <button onclick="playClickSound(); navigate('cover-screen')" class="absolute top-4 left-4 text-gray-500 hover:text-gray-800 font-bold flex items-center gap-1 bg-white px-3 py-1 rounded-full shadow-sm"><span class="text-xl">←</span> Batal</button>
+            
+            <div class="glass-card p-8 rounded-3xl shadow-xl w-full max-w-md border-t-8 border-t-blue-500 animate-slide-up">
+                <div class="text-center mb-6">
+                    <span class="text-5xl inline-block mb-2">👦👧</span>
+                    <h2 class="text-2xl font-black text-blue-800">Isi Data Diri Dulu Yuk!</h2>
+                    <p class="text-gray-500 font-semibold text-sm">Biar belajarnya makin seru</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2 ml-1">Nama Lengkap</label>
+                        <input type="text" id="input-nama" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-lg font-semibold text-gray-700 placeholder-gray-400" placeholder="Contoh: Ahmad Naufal">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2 ml-1">Kelas</label>
+                        <select id="input-kelas" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-lg font-semibold text-gray-700 bg-white cursor-pointer">
+                            <option value="" disabled selected>Pilih Kelas...</option>
+                            <option value="1 A">Kelas 1 A</option>
+                            <option value="1 B">Kelas 1 B</option>
+                            <option value="1 C">Kelas 1 C</option>
+                        </select>
+                    </div>
+                    <button onclick="submitForm()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-md transition-transform active:scale-95 text-lg mt-4 flex justify-center items-center gap-2">
+                        LANJUT <span>➡️</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. PENGANTAR & PANDUAN -->
+        <section id="guide-screen" class="flex-1 flex flex-col bg-purple-50 relative hide">
+            <div id="guide-slider" class="flex-1 relative overflow-hidden"></div>
+            
+            <div class="p-4 bg-white border-t flex justify-between items-center shadow-[0_-5px_15px_rgba(0,0,0,0.05)] z-10">
+                <div class="flex gap-1" id="guide-dots"></div>
+                <div class="flex gap-2">
+                    <button id="guide-prev" onclick="changeGuideSlide(-1)" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-full hover:bg-gray-300 disabled:opacity-50 transition-colors hide">Kembali</button>
+                    <button id="guide-next" onclick="changeGuideSlide(1)" class="px-6 py-2 bg-purple-500 text-white font-bold rounded-full hover:bg-purple-600 shadow-md transition-colors">Selanjutnya</button>
+                    <button id="guide-finish" onclick="finishGuide()" class="px-6 py-2 bg-green-500 text-white font-bold rounded-full hover:bg-green-600 shadow-md transition-colors hide">Masuk Menu Utama</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. MENU UTAMA (DASHBOARD) -->
+        <section id="dashboard-screen" class="flex-1 flex flex-col bg-gray-50 relative hide">
+            <!-- Header Profil -->
+            <div class="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 text-white rounded-b-[40px] shadow-lg relative overflow-hidden">
+                <svg class="absolute right-0 top-0 opacity-10 w-48 h-48 transform translate-x-10 -translate-y-10" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                
+                <div class="flex items-center justify-between relative z-10">
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl shadow-inner border-4 border-blue-300 overflow-hidden">
+                                👦
+                            </div>
+                            <img src="https://iili.io/nvQRAwx.md.jpg" alt="Logo" class="absolute -bottom-1 -right-1 w-7 h-7 object-contain rounded-full border-2 border-white bg-white shadow" onerror="this.style.display='none'">
+                        </div>
+                        <div>
+                            <p class="text-blue-100 font-semibold text-sm">Ahlan wa Sahlan,</p>
+                            <h2 id="dash-name" class="text-2xl font-black truncate max-w-[180px] md:max-w-md">Nama Siswa</h2>
+                            <p id="dash-class" class="text-sm font-bold bg-white/20 inline-block px-2 py-0.5 rounded-full mt-1">Kelas</p>
+                        </div>
+                    </div>
+                    <!-- Audio Control Toggle Button -->
+                    <button onclick="toggleAudio()" id="audio-toggle-btn" class="bg-white/20 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-md flex items-center justify-center text-xl" title="Nyalakan/Matikan Suara">
+                        🔊
+                    </button>
+                </div>
+            </div>
+
+            <!-- Menu Cards -->
+            <div class="flex-1 p-6 flex flex-col gap-4 justify-center max-w-lg mx-auto w-full">
+                <p class="text-center text-gray-500 font-bold text-sm mb-1">Pilih menu secara berurutan ya!</p>
+                
+                <!-- Menu 1: Belajar -->
+                <button onclick="openMenu('belajar')" class="relative bg-white p-4 rounded-3xl shadow-md border-2 border-emerald-400 flex items-center gap-5 hover:bg-emerald-50 transition-all transform hover:scale-[1.02] active:scale-95 text-left group">
+                    <div class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-3xl group-hover:rotate-12 transition-transform shadow-inner">📖</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-black text-gray-800">1. BELAJAR</h3>
+                        <p class="text-xs text-gray-500 font-semibold">Pahami materinya dulu</p>
+                    </div>
+                    <div class="w-9 h-9 bg-emerald-500 rounded-full flex items-center justify-center text-white text-lg shadow-md">🔓</div>
+                </button>
+
+                <!-- Menu 2: Bermain -->
+                <button id="btn-menu-bermain" onclick="openMenu('bermain')" class="menu-locked relative bg-white p-4 rounded-3xl shadow-md border-2 border-gray-200 flex items-center gap-5 transition-all text-left">
+                    <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-3xl shadow-inner">🎮</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-black text-gray-800">2. BERMAIN</h3>
+                        <p class="text-xs text-gray-500 font-semibold">10 Tantangan Buah Seru</p>
+                    </div>
+                    <div id="icon-lock-bermain" class="w-9 h-9 bg-gray-400 rounded-full flex items-center justify-center text-white text-lg shadow-inner">🔒</div>
+                </button>
+
+                <!-- Menu 3: Berlatih -->
+                <button id="btn-menu-berlatih" onclick="openMenu('berlatih')" class="menu-locked relative bg-white p-4 rounded-3xl shadow-md border-2 border-gray-200 flex items-center gap-5 transition-all text-left">
+                    <div class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-3xl shadow-inner">📝</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-black text-gray-800">3. BERLATIH</h3>
+                        <p class="text-xs text-gray-500 font-semibold">Uji kemampuanmu (Nilai)</p>
+                    </div>
+                    <div id="icon-lock-berlatih" class="w-9 h-9 bg-gray-400 rounded-full flex items-center justify-center text-white text-lg shadow-inner">🔒</div>
+                </button>
+
+                <!-- Menu 4: Referensi -->
+                <button onclick="openMenu('referensi')" class="relative bg-white p-4 rounded-3xl shadow-md border-2 border-teal-400 flex items-center gap-5 hover:bg-teal-50 transition-all transform hover:scale-[1.02] active:scale-95 text-left group">
+                    <div class="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-3xl group-hover:rotate-12 transition-transform shadow-inner">📚</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-black text-gray-800">REFERENSI</h3>
+                        <p class="text-xs text-gray-500 font-semibold">Daftar pustaka & sumber</p>
+                    </div>
+                    <div class="w-9 h-9 bg-teal-500 rounded-full flex items-center justify-center text-white text-lg shadow-md">🔓</div>
+                </button>
+            </div>
+            
+             <div class="p-4 text-center">
+                <button id="btn-lihat-laporan" onclick="navigate('report-screen')" class="hide text-blue-600 font-bold underline hover:text-blue-800">Lihat Laporan Hasil Belajar</button>
+             </div>
+        </section>
+
+        <!-- 6. LAYER MENU 1: BELAJAR -->
+        <section id="belajar-screen" class="flex-1 flex flex-col bg-white relative hide">
+            <div class="bg-emerald-500 p-4 text-white flex justify-between items-center shadow-md z-10">
+                <button onclick="backToDashboard()" class="font-bold text-emerald-100 hover:text-white flex items-center"><span class="text-2xl mr-1">←</span> Menu</button>
+                <h2 class="font-black text-lg">BELAJAR</h2>
+                <div class="text-sm font-bold bg-white/20 px-3 py-1 rounded-full" id="belajar-counter">1/5</div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 pb-24 relative" id="belajar-content"></div>
+
+            <div class="absolute bottom-0 w-full p-4 bg-white border-t flex justify-between items-center shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                <button id="belajar-prev" onclick="changeBelajarSlide(-1)" class="px-5 py-2 bg-gray-100 text-gray-600 font-bold rounded-full hover:bg-gray-200 transition-colors opacity-50 cursor-not-allowed">Mundur</button>
+                <button id="belajar-next" onclick="changeBelajarSlide(1)" class="px-8 py-3 bg-emerald-500 text-white font-black rounded-full shadow-lg hover:bg-emerald-600 transition-transform active:scale-95 flex items-center gap-2">Lanjut <span class="text-xl">➔</span></button>
+            </div>
+        </section>
+
+        <!-- 7. LAYER MENU 2: BERMAIN (GAMIFIKASI DENGAN GAMBAR/VISUAL MENARIK) -->
+        <section id="bermain-screen" class="flex-1 flex flex-col bg-blue-50 relative hide">
+            <div class="bg-blue-500 p-4 text-white flex justify-between items-center shadow-md z-10">
+                <button onclick="confirmExitGame('bermain')" class="font-bold text-blue-100 hover:text-white flex items-center"><span class="text-2xl mr-1">×</span> Keluar</button>
+                <div class="flex flex-col items-center">
+                    <h2 class="font-black text-lg">BERMAIN</h2>
+                    <div class="w-32 bg-blue-700 h-2 rounded-full mt-1 overflow-hidden">
+                        <div id="bermain-progress-bar" class="bg-yellow-400 h-full transition-all duration-300" style="width: 10%;"></div>
+                    </div>
+                </div>
+                <div class="text-sm font-bold bg-white/20 px-3 py-1 rounded-full">
+                    <span id="bermain-score-display">⭐ 0</span>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-24" id="bermain-content"></div>
+            
+             <div class="absolute bottom-0 w-full p-4 bg-white border-t text-center shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                <button id="bermain-action-btn" onclick="checkBermainAnswer()" class="w-full max-w-sm mx-auto bg-blue-500 text-white font-black py-3 rounded-full shadow-lg hover:bg-blue-600 transition-transform active:scale-95 text-lg">CEK JAWABAN</button>
+            </div>
+        </section>
+
+        <!-- 8. LAYER MENU 3: BERLATIH (ASESMEN) -->
+        <section id="berlatih-screen" class="flex-1 flex flex-col bg-orange-50 relative hide">
+            <div class="bg-orange-500 p-4 text-white flex justify-between items-center shadow-md z-10">
+                <button onclick="confirmExitGame('berlatih')" class="font-bold text-orange-100 hover:text-white flex items-center"><span class="text-2xl mr-1">×</span> Keluar</button>
+                <h2 class="font-black text-lg">EVALUASI</h2>
+                <div class="text-sm font-bold bg-white/20 px-3 py-1 rounded-full" id="berlatih-counter">Soal 1/10</div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-24" id="berlatih-content"></div>
+            
+             <div class="absolute bottom-0 w-full p-4 bg-white border-t flex justify-between shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                <button id="berlatih-prev" onclick="navigateBerlatih(-1)" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-full hover:bg-gray-300 transition-colors hide">Soal Sebelumnya</button>
+                <button id="berlatih-next" onclick="navigateBerlatih(1)" class="ml-auto px-8 py-3 bg-orange-500 text-white font-black rounded-full shadow-lg hover:bg-orange-600 transition-transform active:scale-95 text-lg">Selanjutnya ➔</button>
+            </div>
+        </section>
+
+        <!-- 9. REFERENSI SCREEN -->
+        <section id="referensi-screen" class="flex-1 flex flex-col bg-teal-50 relative hide">
+            <div class="bg-teal-600 p-4 text-white flex justify-between items-center shadow-md z-10">
+                <button onclick="backToDashboard()" class="font-bold text-teal-100 hover:text-white flex items-center"><span class="text-2xl mr-1">←</span> Menu</button>
+                <h2 class="font-black text-lg">REFERENSI & PUSTAKA</h2>
+                <div></div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full space-y-6">
+                <div class="bg-white p-6 rounded-3xl shadow-md border border-teal-100">
+                    <h3 class="text-xl font-black text-teal-800 mb-4 flex items-center gap-2"><span>📚</span> Daftar Pustaka & Buku Sumber</h3>
+                    <ul class="space-y-4 text-gray-700 text-sm md:text-base">
+                        <li class="bg-teal-50 p-4 rounded-2xl border border-teal-200">
+                            <strong>1. Buku Matematika Kelas 1 SD/MI (Penerbit Erlangga)</strong><br>
+                            Buku panduan belajar berhitung interaktif Kurikulum Merdeka untuk anak usia dini.
+                        </li>
+                        <li class="bg-teal-50 p-4 rounded-2xl border border-teal-200">
+                            <strong>2. Kurikulum Merdeka & Kurikulum Berbasis Cinta (KBC) Kemenag RI</strong><br>
+                            Panduan implementasi pembelajaran ramah anak, berkarakter, dan berbasis penguatan nilai kasih sayang.
+                        </li>
+                        <li class="bg-teal-50 p-4 rounded-2xl border border-teal-200">
+                            <strong>3. Modul Pembelajaran Matematika Fase A (Kelas 1 MI)</strong><br>
+                            Kementerian Agama Republik Indonesia - Direktorat KSKK Madrasah.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl shadow-md border border-teal-100">
+                    <h3 class="text-xl font-black text-teal-800 mb-3 flex items-center gap-2"><span>🌍</span> Konteks Wilayah Lokal</h3>
+                    <p class="text-gray-600 leading-relaxed text-sm md:text-base">
+                        Pengembangan media ini mengintegrasikan kearifan lokal Provinsi Gorontalo, meliputi wilayah pesisir Teluk Tomini, kawasan Danau Limboto, serta dataran agraris perkebunan jagung dan buah-buahan lokal untuk memberikan kedekatan emosional dan kontekstual bagi murid kelas 1 Madrasah Ibtidaiyah.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. LAPORAN PDF SCREEN -->
+        <section id="report-screen" class="flex-1 flex flex-col bg-gray-100 relative hide">
+            <div class="bg-gray-800 p-4 text-white flex justify-between items-center shadow-md z-10 no-print">
+                <button onclick="backToDashboard()" class="font-bold text-gray-300 hover:text-white flex items-center"><span class="text-2xl mr-1">←</span> Menu</button>
+                <h2 class="font-black text-lg">LAPORAN HASIL BELAJAR</h2>
+                <button onclick="downloadPDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-md">Unduh PDF</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center">
+                <div id="pdf-content" class="bg-white w-full max-w-2xl p-8 rounded-3xl shadow-xl border-t-8 border-t-emerald-600 relative overflow-hidden">
+                    
+                    <div class="absolute right-10 top-16 w-32 h-32 border-4 border-dashed border-emerald-300 rounded-full flex items-center justify-center transform rotate-12 opacity-20 pointer-events-none">
+                        <span class="text-emerald-800 font-black text-center text-xs">MIN 1 KOTA GORONTALO</span>
+                    </div>
+
+                    <div class="text-center border-b-2 border-gray-200 pb-6 mb-6 relative">
+                        <div class="absolute left-0 top-0">
+                            <img src="https://iili.io/nvQRAwx.md.jpg" alt="Logo MIN 1" class="w-14 h-14 object-contain" onerror="this.style.display='none'">
+                        </div>
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Kementerian Agama Republik Indonesia</h3>
+                        <h2 class="text-xl font-black text-emerald-800">MIN 1 KOTA GORONTALO</h2>
+                        <h1 class="text-2xl font-extrabold text-gray-800 mt-2">LAPORAN HASIL BELAJAR SISWA</h1>
+                        <p class="text-xs text-gray-500 mt-1">Media Pembelajaran Interaktif (MPI) - Matematika Kelas 1 MI</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-2xl mb-6 border border-gray-200 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500 font-semibold">Nama Lengkap:</p>
+                            <p id="report-name" class="font-black text-gray-800 text-lg">-</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 font-semibold">Kelas:</p>
+                            <p id="report-class" class="font-black text-gray-800 text-lg">-</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 font-semibold">Tanggal Selesai:</p>
+                            <p id="report-date" class="font-bold text-gray-700">-</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 font-semibold">Pengembang:</p>
+                            <p class="font-bold text-gray-700">Selvi Nono, S.Pd.I</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-200 text-center">
+                            <p class="text-xs font-bold text-blue-600 mb-1 uppercase">Skor Bermain</p>
+                            <p id="report-score-bermain" class="text-3xl font-black text-blue-800">0</p>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-2xl border border-orange-200 text-center relative overflow-hidden">
+                            <p class="text-xs font-bold text-orange-600 mb-1 uppercase">Nilai Akhir Berlatih</p>
+                            <p id="report-score-berlatih" class="text-3xl font-black text-orange-800">0</p>
+                            <div id="report-predicate" class="absolute -right-6 -bottom-4 text-white font-black text-xs px-10 py-2 rotate-[-45deg] bg-orange-500">
+                                BAIK
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold text-gray-700 mb-3">Rincian Penguasaan Kompetensi (Asesmen Berlatih):</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                                    <span>Level 1: Dasar (Pemahaman)</span>
+                                    <span id="bar-l1-text">0/24</span>
+                                </div>
+                                <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                                    <div id="bar-l1" class="bg-emerald-500 h-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                                    <span>Level 2: Sedang (Aplikasi & Penerapan)</span>
+                                    <span id="bar-l2-text">0/40</span>
+                                </div>
+                                <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                                    <div id="bar-l2" class="bg-blue-500 h-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                                    <span>Level 3: Tinggi (Penalaran HOTS)</span>
+                                    <span id="bar-l3-text">0/36</span>
+                                </div>
+                                <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                                    <div id="bar-l3" class="bg-purple-500 h-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-r-2xl mb-6">
+                        <h4 class="font-bold text-pink-700 mb-1">Catatan Kurikulum Berbasis Cinta (KBC):</h4>
+                        <p id="report-kbc-note" class="text-sm text-gray-700 leading-relaxed font-medium">
+                            Ananda menunjukkan sikap teliti, tekun, dan penuh semangat dalam belajar berhitung sebagai wujud rasa syukur atas nikmat dan karunia Allah.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-between items-end mt-12 pt-6 border-t border-gray-200 text-sm">
+                        <div>
+                            <p class="text-gray-500">Mengetahui,</p>
+                            <p class="font-bold text-gray-800">Guru Kelas 1 MI</p>
+                            <div class="h-12"></div>
+                            <p class="font-black text-emerald-800 underline">Selvi Nono, S.Pd.I</p>
+                            <p class="text-xs text-gray-500">NIP. 198001012005012001</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-gray-500">Orang Tua / Wali,</p>
+                            <div class="h-16"></div>
+                            <p class="font-bold text-gray-800 border-b border-gray-400 pb-1 px-8">( ........................................ )</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ==================== JAVASCRIPT LOGIC & AUDIO SYNTHESIZER ==================== -->
+    <script>
+        // =========================================================================
+        // LINK GOOGLE APPS SCRIPT WEB APP 
+        // Ganti teks "URL_GAS_ANDA_DISINI" dengan URL Web App Apps Script Anda!
+        // =========================================================================
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwIABde_TR55oH6VjTGtsxgJP5eQWtu60BcK7CjAta8bZNL2x0W4AAVtQ3UNiPGuA/exec";
+
+        /* --- WEB AUDIO API & SOUND SYNTHESIZER --- */
+        let audioCtx = null;
+        let isAudioEnabled = false;
+        let bgmInterval = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleAudio() {
+            initAudio();
+            isAudioEnabled = !isAudioEnabled;
+            const btn = document.getElementById('audio-toggle-btn');
+            if (isAudioEnabled) {
+                btn.innerHTML = '🔊';
+                btn.classList.add('animate-pulse');
+                startBGM();
+                playClickSound();
+            } else {
+                btn.innerHTML = '🔇';
+                btn.classList.remove('animate-pulse');
+                stopBGM();
+            }
+        }
+
+        function playClickSound() {
+            if (!isAudioEnabled || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch(e) {}
+        }
+
+        function playNavSound() {
+            if (!isAudioEnabled || !audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.08);
+                osc.frequency.setValueAtTime(783.99, now + 0.16);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(now + 0.3);
+            } catch(e) {}
+        }
+
+        function playCorrectSound() {
+            if (!isAudioEnabled || !audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                    gain.gain.setValueAtTime(0.12, now + idx * 0.09);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.09 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.09);
+                    osc.stop(now + idx * 0.09 + 0.2);
+                });
+            } catch(e) {}
+        }
+
+        function playWrongSound() {
+            if (!isAudioEnabled || !audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(120, now + 0.25);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(now + 0.25);
+            } catch(e) {}
+        }
+
+        function startBGM() {
+            stopBGM();
+            const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+            let step = 0;
+            bgmInterval = setInterval(() => {
+                if (!isAudioEnabled || !audioCtx) return;
+                try {
+                    const now = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(notes[step % notes.length], now);
+                    gain.gain.setValueAtTime(0.03, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(now + 0.8);
+                    step++;
+                } catch(e) {}
+            }, 1200);
+        }
+
+        function stopBGM() {
+            if (bgmInterval) {
+                clearInterval(bgmInterval);
+                bgmInterval = null;
+            }
+        }
+
+        /* --- STATE MANAGEMENT --- */
+        const state = {
+            studentName: '',
+            studentClass: '',
+            currentScreen: 'splash-screen',
+            unlocked: {
+                belajar: true,
+                bermain: false,
+                berlatih: false
+            },
+            belajar: {
+                currentIndex: 0,
+                progress: [false, false, false, false, false]
+            },
+            bermain: {
+                currentIndex: 0,
+                score: 0,
+                answers: [],
+                currentInteractionState: null
+            },
+            berlatih: {
+                currentIndex: 0,
+                answers: new Array(10).fill(null),
+                details: { L1: 0, L2: 0, L3: 0 },
+                totalScore: 0
+            }
+        };
+
+        /* --- DATA KONTEN --- */
+        
+        const guideSlides = [
+            {
+                title: "Selamat Datang!",
+                text: "Halo sahabat! Kita akan berpetualang belajar matematika tentang pengurangan buah-buahan yang seru.",
+                icon: "👋"
+            },
+            {
+                title: "Urutan Belajar",
+                text: "Kamu harus membuka menu secara berurutan. Mulai dari BELAJAR, lalu BERMAIN, terakhir BERLATIH.",
+                icon: "🛤️"
+            },
+            {
+                title: "Kumpulkan Bintang",
+                text: "Baca cerita dengan teliti, jawab pertanyaan, dan kumpulkan nilaimu. Buktikan kamu anak yang hebat dan cinta ilmu!",
+                icon: "⭐"
+            }
+        ];
+
+        // 5 Slide Materi dengan Gambar Buah Menarik
+        const belajarMateri = [
+            {
+                title: "1. Apa itu Pengurangan?",
+                content: `
+                    <div class="w-full h-40 bg-gradient-to-r from-red-400 to-pink-400 rounded-2xl mb-4 shadow-md border-4 border-red-200 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-7xl z-10 drop-shadow-lg">🍎🍎🍏🍎🍎</span>
+                    </div>
+                    <p class="mb-4">Pengurangan artinya jumlah benda menjadi lebih sedikit karena diambil, dimakan, atau diberikan kepada orang lain.</p>
+                    <div class="bg-red-50 p-4 rounded-xl border border-red-200 mb-4">
+                        <strong class="text-red-800 block mb-1">🍎 Berbagi Buah Apel:</strong>
+                        <p>Ahmad memiliki <strong>15 buah apel</strong>. Ia membagikan <strong>5 buah apel</strong> kepada temannya.</p>
+                    </div>
+                    <p class="font-bold text-center text-lg mb-2">Berapa sisa apel Ahmad?</p>
+                    <p class="text-center text-2xl font-black text-red-600 mb-4">15 - 5 = ...</p>
+                `,
+                taskType: 'mc',
+                options: ['A. 10 apel', 'B. 20 apel', 'C. 5 apel'],
+                correctIndex: 0
+            },
+            {
+                title: "2. Mencari Selisih",
+                content: `
+                    <div class="w-full h-40 bg-gradient-to-r from-orange-300 to-amber-400 rounded-2xl mb-4 shadow-md border-4 border-orange-200 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-7xl z-10 drop-shadow-lg">🍊🍊🍋🍋</span>
+                    </div>
+                    <p class="mb-4">Pengurangan juga dipakai untuk mencari selisih (beda jumlah) antara dua kelompok buah.</p>
+                    <div class="bg-orange-50 p-4 rounded-xl border border-orange-200 mb-4">
+                        <strong class="text-orange-800 block mb-1">🍊 Panen Jeruk:</strong>
+                        <p>Di kebun ada <strong>18 buah jeruk</strong> dan <strong>12 buah lemon</strong>.</p>
+                    </div>
+                    <p class="font-bold text-center text-lg mb-2">Berapa selisih jumlah jeruk dan lemon?</p>
+                    <p class="text-center text-xl text-gray-700 mb-4">18 - 12 = ...</p>
+                `,
+                taskType: 'mc',
+                options: ['A. 5 buah', 'B. 6 buah', 'C. 8 buah'],
+                correctIndex: 1
+            },
+            {
+                title: "3. Strategi Hitung Mundur",
+                content: `
+                    <div class="w-full h-40 bg-gradient-to-r from-yellow-300 to-green-400 rounded-2xl mb-4 shadow-md border-4 border-yellow-200 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-7xl z-10 drop-shadow-lg">🍌🍌🍍🍍</span>
+                    </div>
+                    <p class="mb-4">Cara mudah mengurang adalah dengan menghitung mundur dari angka yang besar.</p>
+                    <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-300 mb-4">
+                        <strong class="text-yellow-800 block mb-1">🍌 Buah Pisang:</strong>
+                        <p>Petani memanen <strong>20 buah pisang</strong>. Disisihkan <strong>3 buah</strong> untuk hewan.</p>
+                    </div>
+                    <p class="text-center text-lg bg-gray-100 p-2 rounded-lg font-mono font-bold mb-4">Mulai dari 20, mundur 3 langkah:<br> 19 ... 18 ... 17.</p>
+                `,
+                taskType: 'mc',
+                options: ['A. 15 buah', 'B. 16 buah', 'C. 17 buah'],
+                correctIndex: 2
+            },
+            {
+                title: "4. Pengurangan dengan Benda",
+                content: `
+                    <div class="w-full h-40 bg-gradient-to-r from-red-500 to-green-500 rounded-2xl mb-4 shadow-md border-4 border-red-300 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-7xl z-10 drop-shadow-lg">🍉🍉🍈🍈</span>
+                    </div>
+                    <p class="mb-4">Kamu bisa menggunakan benda konkrit untuk menghitung pengurangan sampai 20.</p>
+                    <div class="bg-green-50 p-4 rounded-xl border border-green-200 mb-4">
+                        <strong class="text-green-800 block mb-1">🍉 Potongan Semangka:</strong>
+                        <p>Ibu memotong semangka menjadi <strong>14 potong</strong>. Keluarga memakan <strong>4 potong</strong>.</p>
+                    </div>
+                    <p class="font-bold text-center text-lg mb-2">Sisa potongan semangka: 14 - 4 = ...</p>
+                `,
+                taskType: 'mc',
+                options: ['A. 8 potong', 'B. 10 potong', 'C. 12 potong'],
+                correctIndex: 1
+            },
+            {
+                title: "5. Memecahkan Masalah",
+                content: `
+                    <div class="w-full h-40 bg-gradient-to-r from-purple-400 to-fuchsia-400 rounded-2xl mb-4 shadow-md border-4 border-purple-200 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-7xl z-10 drop-shadow-lg">🍇🍇🧺🍇🍇</span>
+                    </div>
+                    <p class="mb-4">Membaca soal cerita dengan teliti membantu kita menjawab dengan benar.</p>
+                    <div class="bg-purple-50 p-4 rounded-xl border border-purple-200 mb-4">
+                        <strong class="text-purple-800 block mb-1">🍇 Panen Anggur:</strong>
+                        <p>Siti membawa <strong>19 ikat anggur</strong>. Diberikan <strong>7 ikat</strong> kepada tetangga.</p>
+                    </div>
+                    <p class="font-bold text-center text-lg mb-2">Berapa sisa ikat anggur Siti? (19 - 7)</p>
+                `,
+                taskType: 'mc',
+                options: ['A. 12 ikat', 'B. 11 ikat', 'C. 13 ikat'],
+                correctIndex: 0
+            }
+        ];
+
+        // 10 Tantangan BERMAIN
+        const bermainTantangan = [
+            {
+                type: 'mc',
+                visual: '🥭🥭🥭\n18 - 6 = ?',
+                stimulus: 'Ayah punya 18 buah mangga. Diberikan kepada nenek 6 buah.',
+                question: 'Berapa sisa mangga ayah?',
+                options: ['12 buah', '14 buah', '24 buah'],
+                correctIndex: 0
+            },
+            {
+                type: 'mc',
+                visual: '🍊🍊🍊\n19 - 5 = ?',
+                stimulus: 'Siti membawa 19 buah jeruk. Sebanyak 5 buah jeruk jatuh.',
+                question: 'Berapa sisa jeruk Siti?',
+                options: ['24 buah', '14 buah', '15 buah'],
+                correctIndex: 1
+            },
+            {
+                type: 'tap-match',
+                visual: '🌿🥥🌿\n16 - 7 = ?',
+                stimulus: 'Ada 16 buah rambutan, dimakan 7 buah.',
+                question: 'Sentuh operasi hitung di kiri dan hasilnya di kanan!',
+                pairs: [{ left: '16 - 7', right: '9 buah' }]
+            },
+            {
+                type: 'mc',
+                visual: '🥥🥥🥥\n20 - 8 = ?',
+                stimulus: 'Di meja ada 20 buah salak. Sebanyak 8 buah jatuh ke lantai.',
+                question: 'Berapa salak yang tersisa?',
+                options: ['12 buah', '11 buah', '13 buah'],
+                correctIndex: 0
+            },
+            {
+                type: 'mc',
+                visual: '🍉🍉🍉\n17 - 3 = ?',
+                stimulus: 'Ibu menyiapkan 17 potong semangka. Dimakan 3 potong.',
+                question: 'Berapa potong semangka yang tersisa?',
+                options: ['13 potong', '15 potong', '14 potong'],
+                correctIndex: 2
+            },
+            {
+                type: 'tap-match',
+                visual: '🐉🐉🐉\n15 - 8 = ?',
+                stimulus: 'Ada 15 buah naga, dibagikan 8 buah.',
+                question: 'Sentuh pasangan operasi dan sisa buah yang tepat!',
+                pairs: [{ left: '15 dikurangi 8', right: '7 buah' }]
+            },
+            {
+                type: 'mc',
+                visual: '🍐🍐🍐\n19 - 9 = ?',
+                stimulus: 'Ada 19 buah pir, diambil 9 buah oleh regu pramuka.',
+                question: 'Berapa sisa buah pir?',
+                options: ['8 buah', '10 buah', '11 buah'],
+                correctIndex: 1
+            },
+            {
+                type: 'mc',
+                visual: '🍎🍎🍎\n20 - 10 = ?',
+                stimulus: 'Ada 20 buah apel, dipindahkan 10 buah ke keranjang.',
+                question: 'Berapa apel yang masih di meja?',
+                options: ['20 buah', '10 buah', '5 buah'],
+                correctIndex: 1
+            },
+            {
+                type: 'tap-match',
+                visual: '🥜🥜🥜\n14 - 6 = ?',
+                stimulus: 'Ada 14 biji, 6 biji pecah.',
+                question: 'Sentuh untuk mencocokkan sisa biji!',
+                pairs: [{ left: '14 biji - 6', right: 'Sisa 8 biji' }]
+            },
+            {
+                type: 'mc',
+                visual: '🍇🍇🍇\n16 - 7 = ?',
+                stimulus: 'Hasan punya 16 butir duku, diberikan 7 butir.',
+                question: 'Berapa sisa duku Hasan?',
+                options: ['8 butir', '9 butir', '10 butir'],
+                correctIndex: 1
+            }
+        ];
+
+        // 10 Soal BERLATIH (Asesmen)
+        const berlatihSoal = [
+            {
+                level: 1,
+                stimulus: 'Usman membawa 15 buah kelapa muda kecil. Ia memberikan 5 buah kepada adiknya.',
+                question: 'Hitunglah sisa buah kelapa muda Usman sekarang!',
+                options: ['9 buah', '10 buah', '11 buah'],
+                correctIndex: 1
+            },
+            {
+                level: 1,
+                stimulus: 'Pak Rahman membawa keranjang berisi 18 buah tomat besar. Sebanyak 4 buah tomat terjatuh.',
+                question: 'Berapa buah tomat yang masih utuh?',
+                options: ['14 buah', '15 buah', '16 buah'],
+                correctIndex: 0
+            },
+            {
+                level: 1,
+                stimulus: 'Ibu meletakkan 17 potong kue nangka. Sebanyak 3 potong sudah dimakan.',
+                question: 'Berapa potong sisa kue nangka di piring?',
+                options: ['15 potong', '14 potong', '13 potong'],
+                correctIndex: 1
+            },
+            {
+                level: 2,
+                stimulus: 'Di perpustakaan ada 20 buku cerita buah. Sekarang hanya tersisa 11 buku di rak.',
+                question: 'Berapakah jumlah buku yang sedang dipinjam?',
+                options: ['8 buku', '9 buku', '10 buku'],
+                correctIndex: 1
+            },
+            {
+                level: 2,
+                stimulus: 'Ada 19 buah mangga mainan di meja. Ahmad berhasil memindahkan 12 buah ke keranjang.',
+                question: 'Berapa buah mangga yang belum dipindahkan?',
+                options: ['6 buah', '7 buah', '8 buah'],
+                correctIndex: 1
+            },
+            {
+                level: 2,
+                stimulus: 'Ada 18 buah naga di pohon. Sebanyak 13 buah dipetik oleh petani.',
+                question: 'Berapa buah naga yang masih di pohon?',
+                options: ['5 buah', '6 buah', '4 buah'],
+                correctIndex: 0
+            },
+            {
+                level: 2,
+                stimulus: 'Zainab memiliki 16 keping koin. Dipakai 4 koin untuk beli jeruk dan 3 koin untuk es buah.',
+                question: 'Berapa sisa keping koin Zainab?',
+                options: ['9 koin', '8 koin', '7 koin'],
+                correctIndex: 0
+            },
+            {
+                level: 3,
+                stimulus: 'Keranjang merah berisi 15 jeruk, keranjang hijau berisi 19 jeruk. Ibu mengambil beberapa jeruk dari keranjang hijau sehingga sisanya sama banyak dengan keranjang merah.',
+                question: 'Berapa jeruk yang diambil dari keranjang hijau?',
+                options: ['3 buah', '4 buah', '5 buah'],
+                correctIndex: 1
+            },
+            {
+                level: 3,
+                stimulus: 'Pak Ali menyusun 20 mangga. Pembeli pertama membeli 8 buah, pembeli kedua membeli 7 buah dari sisanya.',
+                question: 'Pernyataan mana yang paling TEPAT?',
+                options: [
+                    'Sisa mangga Pak Ali lebih dari 6 buah.',
+                    'Jumlah mangga yang terjual adalah 14 buah.',
+                    'Sisa mangga di meja Pak Ali tepat 5 buah.'
+                ],
+                correctIndex: 2
+            },
+            {
+                level: 3,
+                stimulus: 'Kelompok Bintang harus menempel 20 biji kuaci. Baru selesai 12 biji.',
+                question: 'Berapakah kekurangan biji kuaci yang masih harus ditempel?',
+                options: ['8 biji', '7 biji', '6 biji'],
+                correctIndex: 0
+            }
+        ];
+
+        /* --- CORE LOGIC & NAVIGATION --- */
+        
+        window.onload = () => {
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                if (splash) {
+                    splash.classList.add('opacity-0');
+                    setTimeout(() => {
+                        splash.classList.add('hide');
+                        const cover = document.getElementById('cover-screen');
+                        if (cover) cover.classList.remove('hide');
+                    }, 500);
+                }
+            }, 2000);
+        };
+
+        function navigate(targetId) {
+            initAudio();
+            playNavSound();
+            const screens = ['cover-screen', 'form-screen', 'guide-screen', 'dashboard-screen', 'belajar-screen', 'bermain-screen', 'berlatih-screen', 'referensi-screen', 'report-screen'];
+            screens.forEach(s => {
+                const el = document.getElementById(s);
+                if (el) el.classList.add('hide');
+            });
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) targetEl.classList.remove('hide');
+            state.currentScreen = targetId;
+            window.scrollTo(0,0);
+        }
+
+        function openModal(id) {
+            playClickSound();
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.remove('hide');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            }
+        }
+        function closeModal(id) {
+            playClickSound();
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.classList.add('hide'), 300);
+            }
+        }
+        function showAlert(title, message) {
+            playClickSound();
+            const tEl = document.getElementById('alert-title');
+            const mEl = document.getElementById('alert-message');
+            if (tEl) tEl.innerText = title;
+            if (mEl) mEl.innerText = message;
+            openModal('alert-modal');
+        }
+        function closeAlert() { playClickSound(); closeModal('alert-modal'); }
+
+        function submitForm() {
+            playClickSound();
+            const namaEl = document.getElementById('input-nama');
+            const kelasEl = document.getElementById('input-kelas');
+            const nama = namaEl ? namaEl.value.trim() : '';
+            const kelas = kelasEl ? kelasEl.value : '';
+            
+            if (!nama) { showAlert('Oops!', 'Tulis namamu dulu ya!'); return; }
+            if (nama.length < 3) { showAlert('Oops!', 'Namamu terlalu pendek. Isi nama lengkap ya!'); return; }
+            if (!kelas) { showAlert('Oops!', 'Pilih kelasmu dulu!'); return; }
+
+            state.studentName = nama;
+            state.studentClass = kelas;
+            
+            const dashName = document.getElementById('dash-name');
+            const dashClass = document.getElementById('dash-class');
+            if (dashName) dashName.innerText = nama;
+            if (dashClass) dashClass.innerText = kelas;
+            
+            initGuide();
+            navigate('guide-screen');
+        }
+
+        /* --- GUIDE SCREEN --- */
+        let currentGuide = 0;
+        function initGuide() {
+            currentGuide = 0;
+            renderGuideSlide();
+        }
+        function renderGuideSlide() {
+            playClickSound();
+            const slide = guideSlides[currentGuide];
+            const container = document.getElementById('guide-slider');
+            if (!container) return;
+            
+            let greeting = currentGuide === 0 ? `<h2 class="text-xl md:text-2xl font-bold text-gray-500 mb-2">Halo, <span class="text-purple-600">${state.studentName}</span>!</h2>` : '';
+            
+            container.innerHTML = `
+                <div class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+                    ${greeting}
+                    <div class="text-7xl mb-6 bg-white w-32 h-32 rounded-full flex items-center justify-center shadow-lg border-4 border-purple-200">${slide.icon}</div>
+                    <h3 class="text-3xl font-black text-purple-800 mb-4">${slide.title}</h3>
+                    <p class="text-lg text-gray-600 font-semibold max-w-md">${slide.text}</p>
+                </div>
+            `;
+
+            const dotsContainer = document.getElementById('guide-dots');
+            if (dotsContainer) {
+                dotsContainer.innerHTML = guideSlides.map((_, i) => 
+                    `<div class="w-3 h-3 rounded-full transition-all ${i === currentGuide ? 'bg-purple-600 w-8' : 'bg-gray-300'}"></div>`
+                ).join('');
+            }
+
+            const prevBtn = document.getElementById('guide-prev');
+            const nextBtn = document.getElementById('guide-next');
+            const finishBtn = document.getElementById('guide-finish');
+            if (prevBtn) prevBtn.classList.toggle('hide', currentGuide === 0);
+            if (nextBtn) nextBtn.classList.toggle('hide', currentGuide === guideSlides.length - 1);
+            if (finishBtn) finishBtn.classList.toggle('hide', currentGuide !== guideSlides.length - 1);
+        }
+        function changeGuideSlide(dir) {
+            currentGuide += dir;
+            renderGuideSlide();
+        }
+        function finishGuide() {
+            playNavSound();
+            navigate('dashboard-screen');
+        }
+
+        /* --- DASHBOARD LOGIC --- */
+        function openMenu(menu) {
+            playClickSound();
+            if (menu === 'bermain' && !state.unlocked.bermain) {
+                playWrongSound();
+                showAlert('Menu Terkunci 🔒', 'Kamu harus menyelesaikan menu 1. BELAJAR terlebih dahulu sampai tuntas.');
+                return;
+            }
+            if (menu === 'berlatih' && !state.unlocked.berlatih) {
+                playWrongSound();
+                showAlert('Menu Terkunci 🔒', 'Selesaikan ke-10 tantangan di menu 2. BERMAIN untuk membuka Evaluasi ini.');
+                return;
+            }
+
+            if (menu === 'belajar') { initBelajar(); navigate('belajar-screen'); }
+            if (menu === 'bermain') { initBermain(); navigate('bermain-screen'); }
+            if (menu === 'berlatih') { initBerlatih(); navigate('berlatih-screen'); }
+            if (menu === 'referensi') { navigate('referensi-screen'); }
+        }
+
+        function unlockMenu(menu) {
+            state.unlocked[menu] = true;
+            const btn = document.getElementById(`btn-menu-${menu}`);
+            const icon = document.getElementById(`icon-lock-${menu}`);
+            if(btn) {
+                btn.classList.remove('menu-locked', 'border-gray-200');
+                if(menu === 'bermain') btn.classList.add('border-blue-400');
+                if(menu === 'berlatih') btn.classList.add('border-orange-400');
+                
+                if(icon) {
+                    icon.innerHTML = '🔓';
+                    icon.classList.remove('bg-gray-400');
+                    if(menu === 'bermain') icon.classList.add('bg-blue-500');
+                    if(menu === 'berlatih') icon.classList.add('bg-orange-500');
+                }
+            }
+        }
+
+        function backToDashboard() {
+            playClickSound();
+            const allBelajarDone = state.belajar.progress.every(p => p === true);
+            if (allBelajarDone && !state.unlocked.bermain) unlockMenu('bermain');
+            navigate('dashboard-screen');
+        }
+
+        function confirmExitGame(menu) {
+            playClickSound();
+            const titleEl = document.getElementById('alert-title');
+            const msgEl = document.getElementById('alert-message');
+            if (titleEl) titleEl.innerText = 'Keluar?';
+            if (msgEl) msgEl.innerText = 'Progresmu di sesi ini mungkin akan diulang jika belum selesai. Yakin keluar?';
+            
+            const box = document.getElementById('alert-box');
+            if (!box) return;
+            const origHTML = box.innerHTML;
+            box.innerHTML = `
+                <div class="text-5xl mb-4">🚪</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Keluar Sesi?</h3>
+                <p class="text-gray-600 mb-6 font-medium">Kamu yakin ingin kembali ke menu utama?</p>
+                <div class="flex gap-3">
+                    <button id="btn-cancel" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 rounded-full">Batal</button>
+                    <button id="btn-ok" class="flex-1 bg-red-500 text-white font-bold py-3 rounded-full">Ya, Keluar</button>
+                </div>
+            `;
+            openModal('alert-modal');
+            
+            const cancelBtn = document.getElementById('btn-cancel');
+            const okBtn = document.getElementById('btn-ok');
+            if (cancelBtn) {
+                cancelBtn.onclick = () => {
+                    playClickSound();
+                    box.innerHTML = origHTML;
+                    closeAlert();
+                };
+            }
+            if (okBtn) {
+                okBtn.onclick = () => {
+                    playClickSound();
+                    box.innerHTML = origHTML;
+                    closeAlert();
+                    backToDashboard();
+                };
+            }
+        }
+
+        /* --- MENU 1: BELAJAR LOGIC --- */
+        function initBelajar() {
+            state.belajar.currentIndex = 0;
+            renderBelajarSlide();
+        }
+        
+        function renderBelajarSlide() {
+            playClickSound();
+            const idx = state.belajar.currentIndex;
+            const data = belajarMateri[idx];
+            const isDone = state.belajar.progress[idx];
+            
+            const counter = document.getElementById('belajar-counter');
+            if (counter) counter.innerText = `${idx + 1}/${belajarMateri.length}`;
+            
+            let taskHTML = '';
+            if (data.taskType === 'mc') {
+                taskHTML = `
+                    <div class="mt-8 bg-gray-50 border-2 border-emerald-200 p-5 rounded-2xl">
+                        <h4 class="font-bold text-emerald-800 mb-3 flex items-center gap-2"><span>⚡</span> Cek Pemahaman:</h4>
+                        <div class="space-y-2">
+                            ${data.options.map((opt, i) => `
+                                <button onclick="checkBelajarTask(${i}, ${data.correctIndex})" class="w-full text-left px-5 py-3 rounded-xl border-2 border-gray-200 font-bold text-gray-700 hover:border-emerald-400 hover:bg-emerald-50 transition-colors ${isDone && i === data.correctIndex ? 'bg-emerald-100 border-emerald-500' : ''}" ${isDone ? 'disabled' : ''}>
+                                    ${opt}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div id="belajar-feedback" class="mt-3 text-sm font-bold text-center ${isDone ? 'text-emerald-600 block' : 'hide'}">
+                            ${isDone ? '✅ Jawaban Benar! Lanjut ke materi berikutnya.' : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const contentEl = document.getElementById('belajar-content');
+            if (contentEl) {
+                contentEl.innerHTML = `
+                    <div class="animate-fade-in max-w-2xl mx-auto">
+                        <h3 class="text-2xl font-black text-emerald-800 mb-6 border-b-2 border-emerald-100 pb-2">${data.title}</h3>
+                        <div class="text-gray-700 text-lg leading-relaxed">
+                            ${data.content}
+                        </div>
+                        ${taskHTML}
+                    </div>
+                `;
+            }
+
+            const prevBtn = document.getElementById('belajar-prev');
+            const nextBtn = document.getElementById('belajar-next');
+            
+            if (prevBtn) {
+                if (idx === 0) prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                else prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            
+            if (nextBtn) {
+                if (isDone) {
+                    nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    if(idx === belajarMateri.length - 1) {
+                         nextBtn.innerHTML = 'Selesai <span>🏆</span>';
+                         nextBtn.classList.replace('bg-emerald-500', 'bg-yellow-500');
+                    } else {
+                         nextBtn.innerHTML = 'Lanjut <span>➔</span>';
+                         nextBtn.classList.replace('bg-yellow-500', 'bg-emerald-500');
+                    }
+                } else {
+                    nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    nextBtn.innerHTML = 'Kunci <span>🔒</span>';
+                }
+            }
+        }
+
+        function checkBelajarTask(selected, correct) {
+            const feedback = document.getElementById('belajar-feedback');
+            if (selected === correct) {
+                playCorrectSound();
+                state.belajar.progress[state.belajar.currentIndex] = true;
+                if (feedback) {
+                    feedback.innerHTML = '✅ Jawaban Benar! Hebat!';
+                    feedback.className = 'mt-3 text-sm font-bold text-center text-emerald-600 animate-bounce block';
+                }
+                setTimeout(renderBelajarSlide, 1000);
+            } else {
+                playWrongSound();
+                if (feedback) {
+                    feedback.innerHTML = '❌ Coba hitung lagi yuk!';
+                    feedback.className = 'mt-3 text-sm font-bold text-center text-red-500 block';
+                }
+            }
+        }
+
+        function changeBelajarSlide(dir) {
+            playClickSound();
+            const idx = state.belajar.currentIndex;
+            if (dir === -1 && idx > 0) {
+                state.belajar.currentIndex--;
+                renderBelajarSlide();
+            } else if (dir === 1) {
+                if (!state.belajar.progress[idx]) {
+                    playWrongSound();
+                    showAlert('Belum Selesai', 'Jawab pertanyaan (Cek Pemahaman) di bawah materi ini dulu agar bisa lanjut.');
+                    return;
+                }
+                
+                if (idx < belajarMateri.length - 1) {
+                    state.belajar.currentIndex++;
+                    renderBelajarSlide();
+                } else {
+                    playCorrectSound();
+                    showAlert('Alhamdulillah! 🌟', 'Kamu telah menyelesaikan semua materi Belajar. Menu BERMAIN sekarang TERBUKA!');
+                    backToDashboard();
+                }
+            }
+        }
+
+        /* --- MENU 2: BERMAIN LOGIC --- */
+        let selectedTapLeft = null;
+        let selectedTapRight = null;
+
+        function initBermain() {
+            state.bermain.currentIndex = 0;
+            state.bermain.score = 0;
+            state.bermain.answers = new Array(10).fill(null);
+            updateBermainUI();
+            renderBermainChallenge();
+        }
+
+        function updateBermainUI() {
+            const pct = ((state.bermain.currentIndex) / 10) * 100;
+            const bar = document.getElementById('bermain-progress-bar');
+            const scoreDisp = document.getElementById('bermain-score-display');
+            if (bar) bar.style.width = `${Math.max(pct, 5)}%`;
+            if (scoreDisp) scoreDisp.innerText = `⭐ ${state.bermain.score * 10}`;
+        }
+
+        function renderBermainChallenge() {
+            playClickSound();
+            const idx = state.bermain.currentIndex;
+            const data = bermainTantangan[idx];
+            selectedTapLeft = null; selectedTapRight = null;
+            
+            let html = `
+                <div class="max-w-xl mx-auto animate-slide-up text-center">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="bg-blue-200 text-blue-800 font-bold px-3 py-1 rounded-full text-xs">Tantangan ${idx + 1}/10</span>
+                        <span class="text-xl">🧩</span>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-amber-100 to-yellow-100 p-6 rounded-3xl shadow-md border-4 border-yellow-300 mb-4">
+                        <div class="text-5xl md:text-6xl mb-2 tracking-widest whitespace-pre-line">${data.visual}</div>
+                        <p class="text-gray-700 font-bold text-base md:text-lg mt-2">${data.stimulus}</p>
+                    </div>
+
+                    <div class="font-black text-gray-800 text-xl mb-5">${data.question}</div>
+            `;
+
+            if (data.type === 'mc') {
+                html += `<div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="bermain-options-container">`;
+                data.options.forEach((opt, i) => {
+                    html += `
+                        <button onclick="selectBermainMC(this, ${i})" class="w-full py-4 px-3 rounded-2xl border-4 border-gray-200 font-black text-lg text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition-all bg-white shadow-sm flex items-center justify-center gap-2">
+                            <span class="w-7 h-7 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center justify-center">${['A','B','C'][i]}</span>
+                            ${opt}
+                        </button>
+                    `;
+                });
+                html += `</div>`;
+            } else if (data.type === 'tap-match') {
+                html += `
+                    <div class="flex flex-col md:flex-row gap-4 items-center justify-center mt-2">
+                        <div id="tap-left" onclick="handleTapMatch('left')" class="selectable bg-white border-4 border-dashed border-blue-400 p-5 rounded-2xl w-full md:w-1/2 text-center text-xl font-black text-blue-800 shadow-sm min-h-[90px] flex items-center justify-center">
+                            ${data.pairs[0].left}
+                        </div>
+                        <div class="text-3xl text-gray-400 rotate-90 md:rotate-0">➔</div>
+                        <div id="tap-right" onclick="handleTapMatch('right')" class="selectable bg-white border-4 border-dashed border-orange-400 p-5 rounded-2xl w-full md:w-1/2 text-center text-xl font-black text-orange-800 shadow-sm min-h-[90px] flex items-center justify-center">
+                            ${data.pairs[0].right}
+                        </div>
+                    </div>
+                    <p class="text-center text-sm font-bold text-gray-400 mt-4" id="tap-hint">👆 Sentuh kotak kiri, lalu kotak kanan</p>
+                `;
+            }
+
+            html += `</div>`;
+            const contentEl = document.getElementById('bermain-content');
+            if (contentEl) contentEl.innerHTML = html;
+            
+            const actionBtn = document.getElementById('bermain-action-btn');
+            if (actionBtn) {
+                actionBtn.innerText = 'CEK JAWABAN';
+                actionBtn.className = 'w-full max-w-sm mx-auto bg-blue-500 text-white font-black py-3 rounded-full shadow-lg hover:bg-blue-600 transition-transform active:scale-95 text-lg';
+                actionBtn.onclick = checkBermainAnswer;
+            }
+            
+            state.bermain.currentInteractionState = null;
+        }
+
+        function selectBermainMC(el, index) {
+            playClickSound();
+            const container = document.getElementById('bermain-options-container');
+            if (!container) return;
+            const btns = container.querySelectorAll('button');
+            btns.forEach(b => {
+                b.classList.remove('border-blue-500', 'bg-blue-100', 'shadow-md');
+                b.classList.add('border-gray-200', 'bg-white');
+            });
+            el.classList.add('border-blue-500', 'bg-blue-100', 'shadow-md');
+            el.classList.remove('border-gray-200', 'bg-white');
+            state.bermain.currentInteractionState = index;
+        }
+
+        function handleTapMatch(side) {
+            playClickSound();
+            const el = document.getElementById(`tap-${side}`);
+            if (!el) return;
+            el.classList.toggle('selected');
+            
+            if (side === 'left') selectedTapLeft = el.classList.contains('selected') ? true : null;
+            if (side === 'right') selectedTapRight = el.classList.contains('selected') ? true : null;
+
+            const hint = document.getElementById('tap-hint');
+            if (selectedTapLeft && selectedTapRight) {
+                if (hint) {
+                    hint.innerHTML = '✅ Pasangan dipilih. Klik CEK JAWABAN.';
+                    hint.className = 'text-center text-sm font-bold text-blue-600 mt-4';
+                }
+                state.bermain.currentInteractionState = true;
+            } else {
+                state.bermain.currentInteractionState = null;
+                if (hint) hint.innerHTML = '👆 Sentuh kotak kiri, lalu kotak kanan';
+            }
+        }
+
+        function checkBermainAnswer() {
+            playClickSound();
+            const idx = state.bermain.currentIndex;
+            const data = bermainTantangan[idx];
+            const answerState = state.bermain.currentInteractionState;
+
+            if (answerState === null) {
+                playWrongSound();
+                showAlert('Belum Dijawab', 'Silakan pilih jawabanmu terlebih dahulu sebelum mengecek!');
+                return;
+            }
+
+            let isCorrect = false;
+            if (data.type === 'mc') {
+                isCorrect = (answerState === data.correctIndex);
+            } else if (data.type === 'tap-match') {
+                isCorrect = (selectedTapLeft && selectedTapRight);
+            }
+
+            document.querySelectorAll('button, .selectable').forEach(el => el.classList.add('disabled'));
+            const actionBtn = document.getElementById('bermain-action-btn');
+
+            if (isCorrect) {
+                playCorrectSound();
+                state.bermain.score++;
+                state.bermain.answers[idx] = true;
+                if (actionBtn) {
+                    actionBtn.innerText = '✅ TEPAT! LANJUT ➔';
+                    actionBtn.className = 'w-full max-w-sm mx-auto bg-green-500 text-white font-black py-3 rounded-full shadow-lg hover:bg-green-600 transition-transform active:scale-95 text-lg';
+                }
+            } else {
+                playWrongSound();
+                state.bermain.answers[idx] = false;
+                if (actionBtn) {
+                    actionBtn.innerText = '❌ KURANG TEPAT. LANJUT ➔';
+                    actionBtn.className = 'w-full max-w-sm mx-auto bg-red-500 text-white font-black py-3 rounded-full shadow-lg hover:bg-red-600 transition-transform active:scale-95 text-lg';
+                }
+            }
+            
+            updateBermainUI();
+            
+            if (actionBtn) {
+                actionBtn.onclick = () => {
+                    playClickSound();
+                    if (idx < bermainTantangan.length - 1) {
+                        state.bermain.currentIndex++;
+                        renderBermainChallenge();
+                    } else {
+                        finishBermain();
+                    }
+                };
+            }
+        }
+
+        function finishBermain() {
+            playCorrectSound();
+            const finalScore = state.bermain.score * 10;
+            unlockMenu('berlatih');
+            showAlert('Luar Biasa! 🎉', `Kamu berhasil menyelesaikan semua tantangan bermain dengan skor: ${finalScore}. Sekarang menu BERLATIH telah terbuka untuk menguji kemampuan aslimu!`);
+            const repScoreBermain = document.getElementById('report-score-bermain');
+            if (repScoreBermain) repScoreBermain.innerText = finalScore;
+            backToDashboard();
+        }
+
+        /* --- MENU 3: BERLATIH (ASESMEN) LOGIC --- */
+        function initBerlatih() {
+            state.berlatih.currentIndex = 0;
+            state.berlatih.answers = new Array(10).fill(null);
+            renderBerlatihSoal();
+        }
+
+        function renderBerlatihSoal() {
+            playClickSound();
+            const idx = state.berlatih.currentIndex;
+            const data = berlatihSoal[idx];
+            const currentAnswer = state.berlatih.answers[idx];
+
+            const counter = document.getElementById('berlatih-counter');
+            if (counter) counter.innerText = `Soal ${idx + 1}/10`;
+            
+            let badgeClass = '';
+            let badgeText = '';
+            if(data.level === 1) { badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300'; badgeText = 'Level 1: Dasar'; }
+            if(data.level === 2) { badgeClass = 'bg-blue-100 text-blue-800 border-blue-300'; badgeText = 'Level 2: Penerapan'; }
+            if(data.level === 3) { badgeClass = 'bg-purple-100 text-purple-800 border-purple-300'; badgeText = 'Level 3: HOTS'; }
+
+            let html = `
+                <div class="max-w-2xl mx-auto bg-white p-6 rounded-3xl shadow-md border-t-8 ${data.level === 1 ? 'border-emerald-500' : (data.level === 2 ? 'border-blue-500' : 'border-purple-500')}">
+                    <div class="mb-4 inline-block px-3 py-1 rounded-full text-xs font-black border ${badgeClass}">
+                        ${badgeText}
+                    </div>
+                    
+                    <div class="text-gray-700 leading-relaxed text-sm md:text-base text-justify bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
+                        ${data.stimulus}
+                    </div>
+                    
+                    <h3 class="font-black text-gray-800 text-lg mb-6">${idx + 1}. ${data.question}</h3>
+                    
+                    <div class="space-y-3">
+            `;
+
+            data.options.forEach((opt, i) => {
+                const isSelected = currentAnswer === i;
+                html += `
+                    <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:bg-gray-50'}">
+                        <input type="radio" name="soal_berlatih" value="${i}" class="w-5 h-5 text-orange-600 focus:ring-orange-500 cursor-pointer" ${isSelected ? 'checked' : ''} onchange="selectBerlatihAnswer(${i})">
+                        <span class="ml-3 font-bold text-gray-700">${opt}</span>
+                    </label>
+                `;
+            });
+
+            html += `</div></div>`;
+            const contentEl = document.getElementById('berlatih-content');
+            if (contentEl) contentEl.innerHTML = html;
+
+            const prevBtn = document.getElementById('berlatih-prev');
+            if (prevBtn) prevBtn.classList.toggle('hide', idx === 0);
+            
+            const nextBtn = document.getElementById('berlatih-next');
+            if (nextBtn) {
+                if (idx === berlatihSoal.length - 1) {
+                    nextBtn.innerText = 'Kumpulkan Hasil 📄';
+                    nextBtn.className = 'ml-auto px-8 py-3 bg-red-500 text-white font-black rounded-full shadow-lg hover:bg-red-600 transition-transform active:scale-95 text-lg';
+                } else {
+                    nextBtn.innerText = 'Selanjutnya ➔';
+                    nextBtn.className = 'ml-auto px-8 py-3 bg-orange-500 text-white font-black rounded-full shadow-lg hover:bg-orange-600 transition-transform active:scale-95 text-lg';
+                }
+            }
+        }
+
+        function selectBerlatihAnswer(index) {
+            playClickSound();
+            state.berlatih.answers[state.berlatih.currentIndex] = index;
+            renderBerlatihSoal();
+        }
+
+        function navigateBerlatih(dir) {
+            playClickSound();
+            const idx = state.berlatih.currentIndex;
+            
+            if (dir === 1 && state.berlatih.answers[idx] === null) {
+                playWrongSound();
+                showAlert('Jawaban Kosong', 'Kamu harus memilih satu jawaban sebelum lanjut ke soal berikutnya!');
+                return;
+            }
+
+            if (dir === 1 && idx === berlatihSoal.length - 1) {
+                calculateBerlatihScore();
+                return;
+            }
+
+            state.berlatih.currentIndex += dir;
+            renderBerlatihSoal();
+        }
+
+        function calculateBerlatihScore() {
+            playCorrectSound();
+            let totalScore = 0;
+            let L1_score = 0;
+            let L2_score = 0;
+            let L3_score = 0;
+
+            state.berlatih.answers.forEach((ans, i) => {
+                const data = berlatihSoal[i];
+                if (ans === data.correctIndex) {
+                    if (data.level === 1) { L1_score += 8; totalScore += 8; }
+                    if (data.level === 2) { L2_score += 10; totalScore += 10; }
+                    if (data.level === 3) { L3_score += 12; totalScore += 12; }
+                }
+            });
+
+            state.berlatih.totalScore = totalScore;
+            state.berlatih.details = { L1: L1_score, L2: L2_score, L3: L3_score };
+            
+            generateReport();
+        }
+
+        /* --- GOOGLE APPS SCRIPT INTEGRATION --- */
+        function sendDataToGAS() {
+            if (!GAS_URL || GAS_URL === "URL_GAS_ANDA_DISINI") {
+                console.warn("GAS URL belum disetting. Data tidak dikirim ke server.");
+                return;
+            }
+
+            // 1. Ekstrak Data Soal (agar sheet Data Soal ikut terisi otomatis)
+            let dataSoal = [];
+            bermainTantangan.forEach((t, i) => {
+                dataSoal.push({
+                    kategori: "Bermain",
+                    nomor: i + 1,
+                    stimulus: (t.visual + " " + t.stimulus).replace(/\n/g, " "),
+                    pertanyaan: t.question,
+                    opsi: t.options ? t.options.join(" | ") : (t.pairs ? t.pairs.map(p => p.left + " -> " + p.right).join(" | ") : ""),
+                    jawabanBenar: t.options ? t.options[t.correctIndex] : (t.pairs ? t.pairs.map(p => p.right).join(" | ") : "")
+                });
+            });
+            berlatihSoal.forEach((t, i) => {
+                dataSoal.push({
+                    kategori: "Berlatih",
+                    nomor: i + 1,
+                    stimulus: t.stimulus,
+                    pertanyaan: t.question,
+                    opsi: t.options.join(" | "),
+                    jawabanBenar: t.options[t.correctIndex]
+                });
+            });
+
+            // 2. Ekstrak Hasil Pengerjaan Berlatih
+            let countBenar = 0;
+            let countSalah = 0;
+            let detailJawaban = [];
+            
+            state.berlatih.answers.forEach((ans, i) => {
+                const data = berlatihSoal[i];
+                if (ans === data.correctIndex) {
+                    countBenar++;
+                } else {
+                    countSalah++;
+                }
+                detailJawaban.push(ans !== null ? data.options[ans] : "Tidak dijawab");
+            });
+
+            const payload = {
+                nama: state.studentName,
+                kelas: state.studentClass,
+                benar: countBenar,
+                salah: countSalah,
+                detailJawaban: detailJawaban,
+                dataSoal: dataSoal
+            };
+
+            const btnLap = document.getElementById('btn-lihat-laporan');
+            if (btnLap) {
+                btnLap.innerText = "⏳ Sedang menyimpan data ke Database...";
+                btnLap.classList.remove('hide');
+                btnLap.classList.add('text-orange-500');
+            }
+
+            // Kirim menggunakan fetch API (text/plain untuk menghindari CORS preflight errors di GAS)
+            fetch(GAS_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            }).then(res => res.json()).then(data => {
+                console.log("Response dari server:", data);
+                if (btnLap) {
+                    btnLap.innerText = "✅ Data Tersimpan! Lihat Laporan Hasil Belajar";
+                    btnLap.classList.replace('text-orange-500', 'text-blue-600');
+                }
+            }).catch(err => {
+                console.error("Gagal mengirim data:", err);
+                if (btnLap) {
+                    btnLap.innerText = "⚠️ Lihat Laporan Hasil Belajar (Simpan Database Gagal)";
+                    btnLap.classList.replace('text-orange-500', 'text-red-500');
+                }
+            });
+        }
+
+        /* --- REPORT GENERATION --- */
+        function generateReport() {
+            // Trigger pengiriman ke GAS Database
+            sendDataToGAS();
+
+            const nameEl = document.getElementById('report-name');
+            const classEl = document.getElementById('report-class');
+            const scoreBerlatihEl = document.getElementById('report-score-berlatih');
+            
+            if (nameEl) nameEl.innerText = state.studentName;
+            if (classEl) classEl.innerText = state.studentClass;
+            if (scoreBerlatihEl) scoreBerlatihEl.innerText = state.berlatih.totalScore;
+            
+            const s = state.berlatih.totalScore;
+            let predicate = 'KURANG';
+            let kbcNote = 'Ananda perlu lebih teliti lagi. Belajar matematika mengajarkan kita kesabaran. Terus bersemangat ya!';
+            let predColor = 'bg-red-500';
+            
+            if(s >= 90) { predicate = 'SANGAT BAIK'; kbcNote = 'Masya Allah! Ananda sangat teliti dan cerdas dalam berhitung serta memahami materi dengan sangat baik. Pertahankan!'; predColor = 'bg-emerald-500'; }
+            else if(s >= 75) { predicate = 'BAIK'; kbcNote = 'Alhamdulillah, pemahaman Ananda tentang konsep pengurangan sudah baik. Teruslah berlatih agar lebih teliti.'; predColor = 'bg-blue-500'; }
+            else if(s >= 60) { predicate = 'CUKUP'; kbcNote = 'Ananda sudah memahami sebagian konsep. Mari tingkatkan lagi ketekunan dan fokus saat memecahkan masalah.'; predColor = 'bg-yellow-500'; }
+
+            const predEl = document.getElementById('report-predicate');
+            if (predEl) {
+                predEl.innerText = predicate;
+                predEl.className = `absolute -right-6 -bottom-4 text-white font-black text-xs px-10 py-2 rotate-[-45deg] ${predColor}`;
+            }
+            
+            const kbcNoteEl = document.getElementById('report-kbc-note');
+            if (kbcNoteEl) kbcNoteEl.innerText = kbcNote;
+
+            const today = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateEl = document.getElementById('report-date');
+            if (dateEl) dateEl.innerText = today.toLocaleDateString('id-ID', options);
+
+            const pL1 = (state.berlatih.details.L1 / 24) * 100;
+            const pL2 = (state.berlatih.details.L2 / 40) * 100;
+            const pL3 = (state.berlatih.details.L3 / 36) * 100;
+            
+            const barL1 = document.getElementById('bar-l1');
+            const barL1Text = document.getElementById('bar-l1-text');
+            if (barL1) barL1.style.width = `${pL1}%`;
+            if (barL1Text) barL1Text.innerText = `${state.berlatih.details.L1}/24`;
+            
+            const barL2 = document.getElementById('bar-l2');
+            const barL2Text = document.getElementById('bar-l2-text');
+            if (barL2) barL2.style.width = `${pL2}%`;
+            if (barL2Text) barL2Text.innerText = `${state.berlatih.details.L2}/40`;
+            
+            const barL3 = document.getElementById('bar-l3');
+            const barL3Text = document.getElementById('bar-l3-text');
+            if (barL3) barL3.style.width = `${pL3}%`;
+            if (barL3Text) barL3Text.innerText = `${state.berlatih.details.L3}/36`;
+
+            const btnLap = document.getElementById('btn-lihat-laporan');
+            if (btnLap) btnLap.classList.remove('hide');
+
+            showAlert('Selesai! 🎓', `Alhamdulillah, evaluasi selesai. Nilai akhirmu: ${state.berlatih.totalScore}. Mari lihat laporan belajarmu!`);
+            navigate('report-screen');
+        }
+
+        function downloadPDF() {
+            playClickSound();
+            const element = document.getElementById('pdf-content');
+            if (!element) return;
+            const opt = {
+                margin:       0,
+                filename:     `Laporan_Math_${state.studentName.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            element.classList.remove('shadow-xl', 'border-t-8');
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.add('shadow-xl', 'border-t-8');
+            });
+        }
+    </script>
+</body>
+</html>
