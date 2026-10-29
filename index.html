@@ -590,7 +590,7 @@
         // LINK GOOGLE APPS SCRIPT WEB APP 
         // Ganti teks "URL_GAS_ANDA_DISINI" dengan URL Web App Apps Script Anda!
         // =========================================================================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwIABde_TR55oH6VjTGtsxgJP5eQWtu60BcK7CjAta8bZNL2x0W4AAVtQ3UNiPGuA/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbybLXLuwvhWpfrOLcDkM0n86UhHn0h9KGFWkht98KFrxtV5eOhJFurj3l5e48wG-zpv/exec";
 
         /* --- WEB AUDIO API & SOUND SYNTHESIZER --- */
         let audioCtx = null;
@@ -773,7 +773,6 @@
             }
         ];
 
-        // 5 Slide Materi dengan Gambar Buah Menarik
         const belajarMateri = [
             {
                 title: "1. Apa itu Pengurangan?",
@@ -864,7 +863,6 @@
             }
         ];
 
-        // 10 Tantangan BERMAIN
         const bermainTantangan = [
             {
                 type: 'mc',
@@ -945,7 +943,6 @@
             }
         ];
 
-        // 10 Soal BERLATIH (Asesmen)
         const berlatihSoal = [
             {
                 level: 1,
@@ -1061,6 +1058,7 @@
                 setTimeout(() => modal.classList.remove('opacity-0'), 10);
             }
         }
+        
         function closeModal(id) {
             playClickSound();
             const modal = document.getElementById(id);
@@ -1069,15 +1067,34 @@
                 setTimeout(() => modal.classList.add('hide'), 300);
             }
         }
-        function showAlert(title, message) {
+
+        // Variabel global untuk menyimpan fungsi lanjutan setelah klik "Mengerti"
+        let globalAlertCallback = null;
+
+        function showAlert(title, message, callback = null) {
             playClickSound();
             const tEl = document.getElementById('alert-title');
             const mEl = document.getElementById('alert-message');
             if (tEl) tEl.innerText = title;
             if (mEl) mEl.innerText = message;
+            
+            // Simpan fungsi yang akan dieksekusi setelah tombol Mengerti diklik
+            globalAlertCallback = callback;
+            
             openModal('alert-modal');
         }
-        function closeAlert() { playClickSound(); closeModal('alert-modal'); }
+        
+        function closeAlert() { 
+            playClickSound(); 
+            closeModal('alert-modal'); 
+            
+            // Eksekusi fungsi jika ada
+            if (globalAlertCallback) {
+                const cb = globalAlertCallback;
+                globalAlertCallback = null;
+                setTimeout(() => { cb(); }, 300); // Beri jeda animasi modal tertutup
+            }
+        }
 
         function submitForm() {
             playClickSound();
@@ -1212,6 +1229,9 @@
                     <button id="btn-ok" class="flex-1 bg-red-500 text-white font-bold py-3 rounded-full">Ya, Keluar</button>
                 </div>
             `;
+            
+            // Bypass the callback logic for this specific manual modal open
+            globalAlertCallback = null; 
             openModal('alert-modal');
             
             const cancelBtn = document.getElementById('btn-cancel');
@@ -1342,8 +1362,9 @@
                     renderBelajarSlide();
                 } else {
                     playCorrectSound();
-                    showAlert('Alhamdulillah! 🌟', 'Kamu telah menyelesaikan semua materi Belajar. Menu BERMAIN sekarang TERBUKA!');
-                    backToDashboard();
+                    showAlert('Alhamdulillah! 🌟', 'Kamu telah menyelesaikan semua materi Belajar. Menu BERMAIN sekarang TERBUKA!', () => {
+                        backToDashboard();
+                    });
                 }
             }
         }
@@ -1523,10 +1544,11 @@
             playCorrectSound();
             const finalScore = state.bermain.score * 10;
             unlockMenu('berlatih');
-            showAlert('Luar Biasa! 🎉', `Kamu berhasil menyelesaikan semua tantangan bermain dengan skor: ${finalScore}. Sekarang menu BERLATIH telah terbuka untuk menguji kemampuan aslimu!`);
-            const repScoreBermain = document.getElementById('report-score-bermain');
-            if (repScoreBermain) repScoreBermain.innerText = finalScore;
-            backToDashboard();
+            showAlert('Luar Biasa! 🎉', `Kamu berhasil menyelesaikan semua tantangan bermain dengan skor: ${finalScore}. Sekarang menu BERLATIH telah terbuka untuk menguji kemampuan aslimu!`, () => {
+                const repScoreBermain = document.getElementById('report-score-bermain');
+                if (repScoreBermain) repScoreBermain.innerText = finalScore;
+                backToDashboard();
+            });
         }
 
         /* --- MENU 3: BERLATIH (ASESMEN) LOGIC --- */
@@ -1648,84 +1670,97 @@
                 console.warn("GAS URL belum disetting. Data tidak dikirim ke server.");
                 return;
             }
-
-            // 1. Ekstrak Data Soal (agar sheet Data Soal ikut terisi otomatis)
-            let dataSoal = [];
-            bermainTantangan.forEach((t, i) => {
-                dataSoal.push({
-                    kategori: "Bermain",
-                    nomor: i + 1,
-                    stimulus: (t.visual + " " + t.stimulus).replace(/\n/g, " "),
-                    pertanyaan: t.question,
-                    opsi: t.options ? t.options.join(" | ") : (t.pairs ? t.pairs.map(p => p.left + " -> " + p.right).join(" | ") : ""),
-                    jawabanBenar: t.options ? t.options[t.correctIndex] : (t.pairs ? t.pairs.map(p => p.right).join(" | ") : "")
-                });
-            });
-            berlatihSoal.forEach((t, i) => {
-                dataSoal.push({
-                    kategori: "Berlatih",
-                    nomor: i + 1,
-                    stimulus: t.stimulus,
-                    pertanyaan: t.question,
-                    opsi: t.options.join(" | "),
-                    jawabanBenar: t.options[t.correctIndex]
-                });
-            });
-
-            // 2. Ekstrak Hasil Pengerjaan Berlatih
-            let countBenar = 0;
-            let countSalah = 0;
-            let detailJawaban = [];
             
-            state.berlatih.answers.forEach((ans, i) => {
-                const data = berlatihSoal[i];
-                if (ans === data.correctIndex) {
-                    countBenar++;
-                } else {
-                    countSalah++;
+            try {
+                let dataSoal = [];
+                bermainTantangan.forEach((t, i) => {
+                    let opsiText = "";
+                    let jawabanText = "";
+                    if (t.options) {
+                        opsiText = t.options.join(" | ");
+                        jawabanText = t.options[t.correctIndex];
+                    } else if (t.pairs) {
+                        opsiText = t.pairs.map(p => p.left + " -> " + p.right).join(" | ");
+                        jawabanText = t.pairs.map(p => p.right).join(" | ");
+                    }
+                    dataSoal.push({
+                        kategori: "Bermain",
+                        nomor: i + 1,
+                        stimulus: (t.visual + " " + t.stimulus).replace(/\n/g, " "),
+                        pertanyaan: t.question,
+                        opsi: opsiText,
+                        jawabanBenar: jawabanText
+                    });
+                });
+                
+                berlatihSoal.forEach((t, i) => {
+                    dataSoal.push({
+                        kategori: "Berlatih",
+                        nomor: i + 1,
+                        stimulus: t.stimulus,
+                        pertanyaan: t.question,
+                        opsi: t.options.join(" | "),
+                        jawabanBenar: t.options[t.correctIndex]
+                    });
+                });
+
+                let countBenar = 0;
+                let countSalah = 0;
+                let detailJawaban = [];
+                
+                state.berlatih.answers.forEach((ans, i) => {
+                    const data = berlatihSoal[i];
+                    if (ans === data.correctIndex) {
+                        countBenar++;
+                    } else {
+                        countSalah++;
+                    }
+                    detailJawaban.push(ans !== null ? data.options[ans] : "Tidak dijawab");
+                });
+
+                const payload = {
+                    nama: state.studentName,
+                    kelas: state.studentClass,
+                    benar: countBenar,
+                    salah: countSalah,
+                    detailJawaban: detailJawaban,
+                    dataSoal: dataSoal
+                };
+
+                const btnLap = document.getElementById('btn-lihat-laporan');
+                if (btnLap) {
+                    btnLap.innerText = "⏳ Sedang menyimpan data ke Database...";
+                    btnLap.classList.remove('hide');
+                    btnLap.classList.add('text-orange-500');
                 }
-                detailJawaban.push(ans !== null ? data.options[ans] : "Tidak dijawab");
-            });
 
-            const payload = {
-                nama: state.studentName,
-                kelas: state.studentClass,
-                benar: countBenar,
-                salah: countSalah,
-                detailJawaban: detailJawaban,
-                dataSoal: dataSoal
-            };
-
-            const btnLap = document.getElementById('btn-lihat-laporan');
-            if (btnLap) {
-                btnLap.innerText = "⏳ Sedang menyimpan data ke Database...";
-                btnLap.classList.remove('hide');
-                btnLap.classList.add('text-orange-500');
+                // Gunakan parameter no-cors PENTING untuk mencegah browser memblokir request
+                fetch(GAS_URL, {
+                    method: "POST",
+                    mode: "no-cors", 
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                }).then(() => {
+                    console.log("Perintah kirim data berhasil dilepas.");
+                    if (btnLap) {
+                        btnLap.innerText = "✅ Data Sukses Tersimpan! (Lihat Laporan)";
+                        btnLap.classList.replace('text-orange-500', 'text-blue-600');
+                    }
+                }).catch(err => {
+                    console.error("Gagal mengirim ke GAS:", err);
+                    if (btnLap) {
+                        btnLap.innerText = "⚠️ Simpan Database Gagal. Periksa Koneksi/URL.";
+                        btnLap.classList.replace('text-orange-500', 'text-red-500');
+                    }
+                });
+            } catch (error) {
+                console.error("Error memproses Payload Data: ", error);
             }
-
-            // Kirim menggunakan fetch API (text/plain untuk menghindari CORS preflight errors di GAS)
-            fetch(GAS_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(payload)
-            }).then(res => res.json()).then(data => {
-                console.log("Response dari server:", data);
-                if (btnLap) {
-                    btnLap.innerText = "✅ Data Tersimpan! Lihat Laporan Hasil Belajar";
-                    btnLap.classList.replace('text-orange-500', 'text-blue-600');
-                }
-            }).catch(err => {
-                console.error("Gagal mengirim data:", err);
-                if (btnLap) {
-                    btnLap.innerText = "⚠️ Lihat Laporan Hasil Belajar (Simpan Database Gagal)";
-                    btnLap.classList.replace('text-orange-500', 'text-red-500');
-                }
-            });
         }
 
         /* --- REPORT GENERATION --- */
         function generateReport() {
-            // Trigger pengiriman ke GAS Database
+            // Trigger pengiriman ke GAS Database dengan pelindung anti error (try catch di dalamnya)
             sendDataToGAS();
 
             const nameEl = document.getElementById('report-name');
@@ -1781,8 +1816,10 @@
             const btnLap = document.getElementById('btn-lihat-laporan');
             if (btnLap) btnLap.classList.remove('hide');
 
-            showAlert('Selesai! 🎓', `Alhamdulillah, evaluasi selesai. Nilai akhirmu: ${state.berlatih.totalScore}. Mari lihat laporan belajarmu!`);
-            navigate('report-screen');
+            // Alert dipanggil dengan CALLBACK (Menunggu Anda mengklik "Mengerti" terlebih dahulu)
+            showAlert('Selesai! 🎓', `Alhamdulillah, evaluasi selesai. Nilai akhirmu: ${state.berlatih.totalScore}. Klik Mengerti untuk melihat rapor Anda!`, () => {
+                navigate('report-screen');
+            });
         }
 
         function downloadPDF() {
